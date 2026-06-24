@@ -40,7 +40,7 @@ app.post('/api/users', async (req, res) => {
   try {
     const user = new User({ username: req.body.username })
     await user.save()
-    res.json({ username: user.username, _id: user._id })
+    res.json({ username: user.username, _id: user._id.toString() })
   } catch (err) {
     res.status(400).json({ error: err.message })
   }
@@ -48,7 +48,7 @@ app.post('/api/users', async (req, res) => {
 
 app.get('/api/users', async (req, res) => {
   const users = await User.find({}, { username: 1 }).sort({ username: 1 })
-  res.json(users)
+  res.json(users.map(u => ({ username: u.username, _id: u._id.toString() })))
 })
 
 app.post('/api/users/:_id/exercises', async (req, res) => {
@@ -56,13 +56,13 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   if (!user) return res.status(404).json({ error: 'User not found' })
 
   const { description, duration, date } = req.body
-  const exerciseDate = date ? parseDateInput(date) : new Date()
+  const exerciseDate = date && date !== '' ? parseDateInput(date) : new Date()
 
   const exercise = new Exercise({
     username: user.username,
     userId: user._id,
     description,
-    duration: Number(duration),
+    duration: parseInt(duration, 10),
     date: exerciseDate
   })
 
@@ -73,7 +73,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
     description: exercise.description,
     duration: exercise.duration,
     date: exercise.date.toDateString(),
-    _id: exercise._id
+    _id: user._id.toString()
   })
 })
 
@@ -108,7 +108,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
   res.json({
     username: user.username,
     count: log.length,
-    _id: user._id,
+    _id: user._id.toString(),
     log
   })
 })
